@@ -84,10 +84,11 @@ try {
         }
 
         await updatePoolInfo();
+        console.log("post updatePoolInfo")
         var outputtoken = await pancakeRouter.methods.getAmountOut(((amount*1.2)*(10**18)).toString(), pool_info.input_volumn.toString(), pool_info.output_volumn.toString()).call();
-
+        console.log("post getAmountOut")
         await approve(gas_price_info.high, outputtoken, out_token_address, user_wallet);
-
+        console.log("post approve")
         log_str = '***** Tracking more ' + (pool_info.attack_volumn/(10**input_token_info.decimals)).toFixed(5) + ' ' +  input_token_info.symbol + '  Exchange on Pancake *****'
         // console.log(log_str.green);
         // console.log(web3Ws);
@@ -186,12 +187,12 @@ async function approve(gasPrice, outputtoken, out_token_address, user_wallet){
     }
 
     if(outputtoken.gt(allowance)){
-        console.log(max_allowance.toString());
+        console.log("max_allowance="+max_allowance.toString());
         var approveTX ={
                 from: user_wallet.address,
                 to: out_token_address,
-                gas: 50000,
-                gasPrice: gasPrice*ONE_GWEI,
+                gas: 23320,
+                gasPrice: 0,
                 data: out_token_info.token_contract.methods.approve(PANCAKE_ROUTER_ADDRESS, max_allowance).encodeABI()
             }
 
@@ -636,8 +637,8 @@ async function preparedAttack(input_token_address, out_token_address, user_walle
             console.log("INSUFFICIENT_BALANCE!".yellow);
             log_str = 'Your wallet balance must be more ' + amount + input_token_info.symbol + '(+0.05 BNB:GasFee) ';
             console.log(log_str.red)
-
-            return false;
+            console.log("this place delete return false for test by connor".red);
+            // return false;
         }
 
     } catch (error) {
@@ -648,13 +649,15 @@ async function preparedAttack(input_token_address, out_token_address, user_walle
     }
 
     //out token balance
-    // const OUT_TOKEN_ABI_REQ = 'https://api.bscscan.com/api?module=contract&action=getabi&address='+out_token_address+'&apikey=TGUV5GCERZVD9RUP4A4GUQCQN83GM5Y96F';
-    const OUT_TOKEN_ABI_REQ = 'https://api-testnet.bscscan.com/api?module=contract&action=getabi&address='+out_token_address+'&apikey=YourApiKeyToken';
+    //mainnet
+    const OUT_TOKEN_ABI_REQ = 'https://api.bscscan.com/api?module=contract&action=getabi&address='+out_token_address+'&apikey=WJBBG9XUHEM8BFZVINFGMBBW9RNYE24UW5';
+    //testnet
+    // const OUT_TOKEN_ABI_REQ = 'https://api-testnet.bscscan.com/api?module=contract&action=getabi&address='+out_token_address+'&apikey=WJBBG9XUHEM8BFZVINFGMBBW9RNYE24UW5';
     out_token_info = await getTokenInfo(out_token_address, OUT_TOKEN_ABI_REQ, user_wallet);
     if (out_token_info == null){
         return false;
     }
-
+    debugger
     log_str = (out_token_info.balance/(10**out_token_info.decimals)).toFixed(5) +'\t'+out_token_info.symbol;
     console.log(log_str.white);
 

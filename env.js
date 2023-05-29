@@ -1,6 +1,6 @@
-const PRIVATE_KEY='Your private key here'
+const PRIVATE_KEY=''
 
-const TOKEN_ADDRESS='0x2859e4544c4bb03966803b044a93563bd2d0dd4d'; // change to Token address you want to target
+const TOKEN_ADDRESS='0x55d398326f99059fF775485246999027B3197955'; // change to Token address you want to target
 const AMOUNT=0.01
 const LEVEL=0.1
 

@@ -42,10 +42,11 @@ var subscription;
 
 async function createWeb3(){
     try {
+        // debugger
         web3 = new Web3(new Web3.providers.HttpProvider(HTTP_PROVIDER_LINK));
         // web3 = new Web3(new Web3.providers.HttpProvider(HTTP_PROVIDER_LINK_TEST));
         //web3 = new Web3(EthereumTesterProvider());
-        web3.eth.getAccounts(console.log);
+        // web3.eth.getAccounts(console.log);
         web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK));
         pancakeRouter = new web3.eth.Contract(PANCAKE_ROUTER_ABI, PANCAKE_ROUTER_ADDRESS);
         pancakeFactory = new web3.eth.Contract(PANCAKE_FACTORY_ABI, PANCAKE_FACTORY_ADDRESS);
@@ -61,45 +62,69 @@ async function createWeb3(){
 async function main() {
 
 try {
+        const out_token_address = TOKEN_ADDRESS;
+        const amount = AMOUNT;
+        const level = LEVEL;
+        
         if (await createWeb3() == false) {
             console.log('Web3 Create Error'.yellow);
             process.exit();
         }
-
+        
         let user_wallet;
-
+        // debugger
         try {
             user_wallet = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
         } catch(error) {
             console.log('\x1b[31m%s\x1b[0m', 'Your private key is invalid. Update env.js with correct PRIVATE_KEY')
             throw error
         }
-        const out_token_address = TOKEN_ADDRESS;
-        const amount = AMOUNT;
-        const level = LEVEL;
-
+        
+        
         ret = await preparedAttack(INPUT_TOKEN_ADDRESS, out_token_address, user_wallet, amount, level);
         if(ret == false) {
           process.exit();
         }
 
         await updatePoolInfo();
+        /*
         console.log("post updatePoolInfo")
         var outputtoken = await pancakeRouter.methods.getAmountOut(((amount*1.2)*(10**18)).toString(), pool_info.input_volumn.toString(), pool_info.output_volumn.toString()).call();
         console.log("post getAmountOut")
-        await approve(gas_price_info.high, outputtoken, out_token_address, user_wallet);
+        // await approve(gas_price_info.high, outputtoken, out_token_address, user_wallet);
         console.log("post approve")
         log_str = '***** Tracking more ' + (pool_info.attack_volumn/(10**input_token_info.decimals)).toFixed(5) + ' ' +  input_token_info.symbol + '  Exchange on Pancake *****'
-        // console.log(log_str.green);
+        console.log(log_str.green);
         // console.log(web3Ws);
-        web3Ws.onopen = function(evt) {
+        */
+       
+        /* web3Ws.onopen = function(evt) {
+            console.log('------------11------connected------------------')
             web3Ws.send(JSON.stringify({ method: "subscribe", topic: "transfers", address: user_wallet.address }));
-            console.log('connected')
+            console.log('------------------connected------------------')
         }
+        web3Ws.onmessage = function(evt) {
+            console.info('received data', evt.data);
+        };
+        web3Ws.onerror = function(evt) {
+            console.error('an error occurred', evt.data);
+        };
+        web3Ws.onclose = function(event) {
+            if (event.wasClean) {
+                console.info(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+            } else {
+              // e.g. server process killed or network down
+              // event.code is usually 1006 in this case
+              console.error('[close] Connection died');
+            }
+          }; */
+        //   console.log(web3Ws)
+          web3Ws.eth.isSyncing().then(console.log);
+        // console.log("subscribe pendingTransactions");
         // get pending transactions
-        subscription = web3Ws.eth.subscribe('pendingTransactions', function (error, result) {
-        }).on("data", async function (transactionHash) {
-            console.log(transactionHash);
+        subscription = web3Ws.eth.subscribe('pendingTransactions', function(error, result){ 
+        }).on("data", function (transactionHash) {
+            console.log("transactionHash"+transactionHash);
 
             // let transaction = await web3.eth.getTransaction(transactionHash);
             // if (transaction != null && transaction['to'] == PANCAKE_ROUTER_ADDRESS)
@@ -113,6 +138,51 @@ try {
             }
         })
 
+     var subscription1 = web3Ws.eth.subscribe('syncing', function(error, sync){
+            console.log("subscription1 data"+sync);
+        })
+        .on("data", function(sync){
+            console.log("subscription1 data"+sync);
+        })
+        .on("changed", function(isSyncing){
+            console.log("subscription1 changed"+isSyncing);
+            if(isSyncing) {
+                // stop app operation
+            } else {
+                // regain app operation
+            }
+        });
+
+        var subscription2 = web3Ws.eth.subscribe('newBlockHeaders', function(error, result){
+            console.log("subscription2 "+result);
+            if (!error) {
+                console.log(result);
+        
+                return;
+            }
+        
+            console.error(error);
+        })
+        .on("connected", function(subscriptionId){
+            console.log("subscription2 connected"+subscriptionId);
+        })
+        .on("data", function(blockHeader){
+            console.log("subscription2 blockHeader"+blockHeader);
+        })
+        .on("error", console.error);
+
+/**
+        debugger
+        console.log('111111111111111111'.yellow);
+        let transactionHash = "0x85132802797b005bb1e3d9ed5f32875638b88b966e72514806e2463f81bb67bf"
+        let transaction = await web3.eth.getTransaction(transactionHash);
+        
+        if (transaction != null && transaction['to'] == PANCAKE_ROUTER_ADDRESS)
+        {
+            console.log(transaction);
+            await handleTransaction(transaction, out_token_address, user_wallet, amount, level);
+        }
+  */      
     } catch (error) {
 
       if(error.data != null && error.data.see === 'https://infura.io/dashboard')
@@ -129,46 +199,48 @@ try {
 }
 
 async function handleTransaction(transaction, out_token_address, user_wallet, amount, level) {
+    console.log("22222")
+    // if (await triggersFrontRun(transaction, out_token_address, amount, level)) {
+    // }
+    
+    // subscription.unsubscribe();
+    console.log('Perform front running attack...');
 
-    if (await triggersFrontRun(transaction, out_token_address, amount, level)) {
-        subscription.unsubscribe();
-        console.log('Perform front running attack...');
+    let gasPrice = parseInt(transaction['gasPrice']);
+    // let newGasPrice = gasPrice + 50*ONE_GWEI;
+    let newGasPrice = gasPrice;
+    var estimatedInput = ((amount*0.999)*(10**18)).toString();
+    var realInput = (amount*(10**18)).toString();
+    var gasLimit = (30000).toString();
 
-        let gasPrice = parseInt(transaction['gasPrice']);
-        let newGasPrice = gasPrice + 50*ONE_GWEI;
+    await updatePoolInfo();
 
-        var estimatedInput = ((amount*0.999)*(10**18)).toString();
-        var realInput = (amount*(10**18)).toString();
-        var gasLimit = (300000).toString();
+    var outputtoken = await pancakeRouter.methods.getAmountOut(estimatedInput, pool_info.input_volumn.toString(), pool_info.output_volumn.toString()).call();
+    await swap(newGasPrice, gasLimit, outputtoken, realInput, 0, out_token_address, user_wallet, transaction);
 
-        await updatePoolInfo();
+    console.log("wait until the honest transaction is done...", transaction['hash']);
 
-        var outputtoken = await pancakeRouter.methods.getAmountOut(estimatedInput, pool_info.input_volumn.toString(), pool_info.output_volumn.toString()).call();
-        swap(newGasPrice, gasLimit, outputtoken, realInput, 0, out_token_address, user_wallet, transaction);
-
-        console.log("wait until the honest transaction is done...", transaction['hash']);
-
-        while (await isPending(transaction['hash'])) {
-        }
-
-        if(buy_failed)
-        {
-            succeed = false;
-            return;
-        }
-
-        console.log('Buy succeed:')
-
-        //Sell
-        await updatePoolInfo();
-        var outputeth = await pancakeRouter.methods.getAmountOut(outputtoken, pool_info.output_volumn.toString(), pool_info.input_volumn.toString()).call();
-        outputeth = outputeth * 0.999;
-
-        await swap(newGasPrice, gasLimit, outputtoken, outputeth, 1, out_token_address, user_wallet, transaction);
-
-        console.log('Sell succeed');
-        succeed = true;
+    while (await isPending(transaction['hash'])) {
     }
+
+    if(buy_failed)
+    {
+        succeed = false;
+        return;
+    }
+
+    console.log('Buy succeed:')
+    debugger
+    //Sell
+    await updatePoolInfo();
+    var outputeth = await pancakeRouter.methods.getAmountOut(outputtoken, pool_info.output_volumn.toString(), pool_info.input_volumn.toString()).call();
+    outputeth = outputeth * 0.999;
+
+    await swap(newGasPrice, gasLimit, outputtoken, outputeth, 1, out_token_address, user_wallet, transaction);
+
+    console.log('Sell succeed');
+    succeed = true;
+   
 }
 
 async function approve(gasPrice, outputtoken, out_token_address, user_wallet){
@@ -188,15 +260,17 @@ async function approve(gasPrice, outputtoken, out_token_address, user_wallet){
 
     if(outputtoken.gt(allowance)){
         console.log("max_allowance="+max_allowance.toString());
+        console.log("gas fee limit="+(23320*gasPrice*ONE_GWEI*1e-18));
         var approveTX ={
                 from: user_wallet.address,
                 to: out_token_address,
                 gas: 23320,
-                gasPrice: 0,
+                gasPrice: gasPrice*ONE_GWEI,
                 data: out_token_info.token_contract.methods.approve(PANCAKE_ROUTER_ADDRESS, max_allowance).encodeABI()
             }
-
+        console.log("signTransaction start");
         var signedTX = await user_wallet.signTransaction(approveTX);
+        console.log("sendSignedTransaction start");
         var result = await web3.eth.sendSignedTransaction(signedTX.rawTransaction);
 
         console.log('Approved Token')
@@ -395,11 +469,15 @@ async function triggersFrontRun(transaction, out_token_address, amount, level) {
 }
 
 async function swap(gasPrice, gasLimit, outputtoken, outputeth, trade, out_token_address, user_wallet, transaction) {
+    debugger
+    // gasLimit = parseInt("30000");
+    // outputeth = parseInt("0.0000000001")
+    // gasPrice = "14.3";
     // Get a wallet address from a private key
     var from = user_wallet;
     var deadline;
     var swap;
-
+    
     //w3.eth.getBlock(w3.eth.blockNumber).timestamp
     await web3.eth.getBlock('latest', (error, block) => {
         deadline = block.timestamp + 300; // transaction expires in 300 seconds (5 minutes)
@@ -433,7 +511,7 @@ async function swap(gasPrice, gasLimit, outputtoken, outputeth, trade, out_token
             gas: gasLimit,
             gasPrice: gasPrice,
             data: encodedABI,
-            value: 0*10**18
+            value: outputeth
           };
     }
 
@@ -443,7 +521,7 @@ async function swap(gasPrice, gasLimit, outputtoken, outputeth, trade, out_token
         let is_pending = await isPending(transaction['hash']);
         if(!is_pending) {
             console.log("The transaction you want to attack has already been completed!!!");
-            process.exit();
+            // process.exit();
         }
     }
 
@@ -453,6 +531,7 @@ async function swap(gasPrice, gasLimit, outputtoken, outputeth, trade, out_token
         console.log('swap : ', hash);
     })
     .on('confirmation', function(confirmationNumber, receipt){
+        console.log('====confirmation=====', confirmationNumber, receipt)
         if(trade == 0){
           buy_finished = true;
         }
@@ -461,9 +540,10 @@ async function swap(gasPrice, gasLimit, outputtoken, outputeth, trade, out_token
         }
     })
     .on('receipt', function(receipt){
-
+        console.log('====receipt=====', receipt)
     })
     .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+        console.log('====error=====', receipt)
         if(trade == 0){
           buy_failed = true;
           console.log('Attack failed(buy)')
@@ -509,7 +589,7 @@ async function isPending(transactionHash) {
 
 async function updatePoolInfo() {
     try{
-
+        // debugger
         var reserves = await pool_info.contract.methods.getReserves().call();
 
         if(pool_info.forward) {
@@ -523,7 +603,7 @@ async function updatePoolInfo() {
         pool_info.input_volumn = eth_balance;
         pool_info.output_volumn = token_balance;
         pool_info.attack_volumn = eth_balance * (pool_info.attack_level/100);
-
+        console.log('Successed To Get Pair Info');
     }catch (error) {
 
         console.log('Failed To Get Pair Info'.yellow);
@@ -619,7 +699,7 @@ async function getTokenInfo(tokenAddr, token_abi_ask, user_wallet) {
 async function preparedAttack(input_token_address, out_token_address, user_wallet, amount, level)
 {
     try {
-
+        // debugger
         gas_price_info = await getCurrentGasPrices();
         //await setFrontBot(user_wallet);
 
@@ -657,7 +737,7 @@ async function preparedAttack(input_token_address, out_token_address, user_walle
     if (out_token_info == null){
         return false;
     }
-    debugger
+    // debugger
     log_str = (out_token_info.balance/(10**out_token_info.decimals)).toFixed(5) +'\t'+out_token_info.symbol;
     console.log(log_str.white);
 

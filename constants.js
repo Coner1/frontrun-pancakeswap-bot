@@ -10,8 +10,9 @@ const PANCAKE_ROUTER_ABI = [{"inputs":[{"internalType":"address","name":"_factor
 // To use with Uniswap use infura endpoint and configure Uniswap ABIs above. 
 const NETWORK = "mainnet";
 const HTTP_PROVIDER_LINK = `https://bsc-dataseed1.binance.org:443`;
-const WEBSOCKET_PROVIDER_LINK = `wss://dex.binance.org/api/ws`;
-
+// const WEBSOCKET_PROVIDER_LINK = `wss://dex.binance.org/api/ws`;
+// const WEBSOCKET_PROVIDER_LINK = `ws://192.168.1.132:8546`;
+const WEBSOCKET_PROVIDER_LINK = `ws://192.168.1.10:8546`;
 const NETWORK_TEST = "ropsten";
 const HTTP_PROVIDER_LINK_TEST = `https://data-seed-prebsc-1-s1.binance.org:8545`;
 const GAS_STATION = 'https://ethgasstation.info/json/ethgasAPI.json'
